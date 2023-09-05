@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width = device-width,initial-scale=1.0" />
+    <title>Leaflet test</title>
+    <!--Leaflet css-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        body{
+            margin: 0;
+            padding: 0;
+        }
+        #map{
+            width: 100%;
+            height: 100vh;
+        }
+        .coordinate{
+            position: absolute;
+            bottom: 10px;
+            right: 50%;
+        }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: black;
+            color: white;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="map">
+        <div> class = "coordinate"</div>
+    </div>
+</body>
+
+</html>
+<!--Leaflet js-->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    var map = L.map('map').setView([-29.7209, -53.7148], 100); // coordenadas e zoom inicial do mapa
+
+    // para outras opções de mapas, acesse: https://leaflet-extras.github.io/leaflet-providers/preview/
+    var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+    osm.addTo(map);
+
+    // tentar entender para que serve esse ponto
+  //  var transformation = L.Transformation(1, 0, -1, 0); // (a*x + b, c*y + d)
+    //var ponto = L.point(-29.7209, -53.7148);
+    //var ponto2 = transformation.transform(ponto);
+    
+
+    var osmHOT = L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        minZoom: 16,
+        attribution: '© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team hosted by OpenStreetMap France'
+    });
+
+    // MARKERS
+    // como personalizar nossos icones
+    var eventoIcon = L.icon({
+        iconUrl: 'img/evento.png',
+        iconSize: [38, 95],
+    });
+
+
+    //var ct = L.marker([-29.7133, -53.7168], {icon: eventoIcon}).addTo(map);
+    var ct = L.marker([-29.7133, -53.7168]).addTo(map);
+    ct.bindPopup('<b>Centro de Tecnologia </b><br>Universidade Federal de Santa Maria');
+
+    var reitoria = L.marker([-29.7209, -53.7148]).addTo(map);
+    reitoria.bindPopup('<b>Reitoria</b><br>Universidade de Santa Maria');
+
+    UFSM = L.layerGroup([ct, reitoria]).addTo(map);
+
+    // Layer Control
+    var baseMaps = {
+        "OpenStreetMap": osm,
+        "OpenStreetMap.HOT": osmHOT
+    };
+
+    var overlayMaps = {
+        "UFSM": UFSM
+    };
+
+    var layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+    // provavelmente é possivel criar os markers via geojson, e nomealos por la para dps exibir seus nomes
+
+    /// EVENTOS
+    map.on('mousemove', function(e){
+        document.getElementsByClassName('coordinate')[0].innerHTML = 'lat: ' + e.latlng.lat + ' lng: ' + e.latlng.lng;
+    });
+    if (!navigator.geolocation) {
+        console.log('Geolocation is not supported by your browser');
+    } 
+    else {
+        setInterval(()=>{
+            navigator.geolocation.getCurrentPosition(getPosition)
+        },4000)
+    }
+    var localization, range
+    function getPosition(position) {
+        //console.log(position)
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+        var accuracy = position.coords.accuracy;
+
+        if(localization){
+            map.removeLayer(localization)
+        }
+        if(range){
+            map.removeLayer(range)
+        }
+
+        localization = L.marker([lat, lng]).bindPopup('Você está aqui!');
+        range = L.circle([lat, lng], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.5,
+            radius: 50
+        });
+
+        var player = L.featureGroup([localization, range]).addTo(map);
+        map.fitBounds(player.getBounds());
+
+        console.log("Your Coordinates are: Lat " + lat + ", Long: " + lng + ", Acc: " + accuracy);
+    }
+</script>
